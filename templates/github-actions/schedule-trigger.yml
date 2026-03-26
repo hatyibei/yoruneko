@@ -1,0 +1,142 @@
+# GitHub Actions Schedule Trigger Template
+#
+# Two patterns included:
+# - Pattern A: In-repo (agent works on the same repository)
+# - Pattern B: Cross-repo trigger (agent orchestrates via API)
+#
+# Choose one pattern and delete the other.
+
+# ============================================================
+# Pattern A: In-Repo Schedule
+# Use when the agent reads/modifies code in THIS repository.
+# Example: code review, dependency updates, report generation.
+# ============================================================
+
+name: "Scheduled Agent - Pattern A (In-Repo)"
+
+on:
+  schedule:
+    # Run daily at 09:00 UTC (18:00 JST)
+    # Cron reference: minute hour day-of-month month day-of-week
+    - cron: "0 9 * * *"
+  workflow_dispatch: # Allow manual trigger for testing
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30 # Prevent runaway execution
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run scheduled task
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Add any additional secrets your CLAUDE.md references:
+          # SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          # APP_API_TOKEN: ${{ secrets.APP_API_TOKEN }}
+        run: |
+          claude --print "Execute the scheduled task as defined in CLAUDE.md" \
+            --allowedTools "Read,Write,Edit,Bash,Glob,Grep" \
+            --max-turns 20
+
+      - name: Upload results as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-results-${{ github.run_number }}
+          path: |
+            reports/
+            logs/
+          retention-days: 30
+
+
+# ============================================================
+# Pattern B: Cross-Repo Trigger
+# Use when the agent calls external APIs without modifying
+# this repository's code.
+# Example: CS automation, monitoring, external service checks.
+# ============================================================
+
+# name: "Scheduled Agent - Pattern B (Cross-Repo Trigger)"
+#
+# on:
+#   schedule:
+#     # Run every hour
+#     - cron: "0 * * * *"
+#   workflow_dispatch:
+#
+# jobs:
+#   run-agent:
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 15
+#
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+#
+#       - name: Install Claude Code
+#         run: npm install -g @anthropic-ai/claude-code
+#
+#       - name: Run scheduled task
+#         env:
+#           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+#           APP_API_URL: ${{ secrets.APP_API_URL }}
+#           APP_API_TOKEN: ${{ secrets.APP_API_TOKEN }}
+#           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+#         run: |
+#           claude --print "Execute the scheduled task as defined in CLAUDE.md" \
+#             --allowedTools "Bash" \
+#             --max-turns 10
+#
+#       - name: Post summary to GitHub Actions
+#         if: always()
+#         run: |
+#           echo "## Agent Run Summary" >> $GITHUB_STEP_SUMMARY
+#           echo "- **Run:** #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+#           echo "- **Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+#           echo "- **Time:** $(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
+
+
+# ============================================================
+# Common cron schedule examples (all times UTC):
+# ============================================================
+#
+# Every hour:           "0 * * * *"
+# Every 6 hours:        "0 */6 * * *"
+# Daily at midnight:    "0 0 * * *"
+# Daily at 9 AM:        "0 9 * * *"
+# Weekdays at 9 AM:     "0 9 * * 1-5"
+# Monday at 9 AM:       "0 9 * * 1"
+# First of month:       "0 0 1 * *"
+# Every 15 minutes:     "*/15 * * * *"  (minimum: 5 minutes)
+#
+# Note: GitHub Actions may delay scheduled runs by minutes
+# to hours on busy periods. Do not rely on exact timing.
+# Inactive repos (no commits in 60 days) may have schedules
+# disabled automatically.
+# ============================================================
+
+
+# ============================================================
+# Required repository secrets (Settings > Secrets > Actions):
+# ============================================================
+#
+# ANTHROPIC_API_KEY   - Claude API key (required)
+#                       Pro plan users: API usage included
+#                       Free: need separate API billing
+#
+# Add any secrets referenced in your CLAUDE.md:
+# SLACK_WEBHOOK_URL   - Slack incoming webhook
+# APP_API_URL         - Your application's API base URL
+# APP_API_TOKEN       - API authentication token
+# ============================================================
