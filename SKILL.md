@@ -1,6 +1,6 @@
 ---
 name: yoruneko
-description: Design and set up Claude Code scheduled tasks. Use when the user wants to create a CLAUDE.md for scheduled or autonomous agents, choose between /loop vs Desktop Scheduled Tasks vs GitHub Actions schedule triggers, design escalation and notification flows for recurring automated tasks, or set up a cron-based autonomous workflow.
+description: Design and set up Claude Code scheduled tasks (/loop, Desktop Scheduled Tasks, GitHub Actions schedule trigger). Guides method selection, CLAUDE.md template design, escalation rules, and notification setup for autonomous recurring tasks. Use when setting up a scheduled agent, designing a CLAUDE.md for automation, choosing between schedule methods, planning escalation and monitoring for autonomous tasks, or asking how to automate recurring work with Claude Code.
 ---
 
 # Yoruneko — Schedule Task Designer
@@ -12,14 +12,14 @@ Help users design, configure, and deploy autonomous scheduled tasks for Claude C
 Ask the user about their requirements, then select:
 
 1. **Need persistence across sessions?**
-   - No → **`/loop`** (session-scoped, max 3 days, interval-based)
+   - No → **`/loop`** (session-scoped, max 3 days, interval-based). Best for transient monitoring like watching a deploy or CI status — tasks that naturally end when you close the terminal.
    - Yes → Continue
 2. **Machine always on? macOS or Windows?**
-   - Yes to both → **Desktop Scheduled Tasks** (persistent, full MCP/Skills access, catch-up supported)
-   - No → **GitHub Actions schedule trigger** (cloud, 24/7, no PC needed)
+   - Yes to both → **Desktop Scheduled Tasks** (persistent, full MCP/Skills access, catch-up supported). Best when tasks need local tools, MCP servers, or files only available on your machine.
+   - No → **GitHub Actions schedule trigger** (cloud, 24/7, no PC needed). Best for tasks requiring server-grade reliability — they run even when your machine is off.
 3. **If GitHub Actions — need to modify app code?**
-   - Yes → **Pattern A**: Add workflow to the app's own repository
-   - No → **Pattern B**: Create a dedicated trigger repository
+   - Yes → **Pattern A**: Add workflow to the app's own repository. Simpler setup; the agent can directly commit and create PRs.
+   - No → **Pattern B**: Create a dedicated trigger repository. Keeps automation separate from app code; the agent calls external APIs instead.
 
 For detailed comparison, read `patterns/DECISION_MATRIX.md`.
 
@@ -45,15 +45,15 @@ Use the Quick Method Selection above. Confirm the choice with the user. Key cons
 
 ### Step 3: Design the CLAUDE.md
 
-Every scheduled task CLAUDE.md needs these 7 sections:
+Every scheduled task CLAUDE.md needs these 7 sections. Each exists for a specific reason — without any one of them, the autonomous agent will make avoidable mistakes:
 
-1. **Role** — Who the agent is and what it does (one sentence)
-2. **Scope** — Allowed and forbidden actions (explicit lists)
-3. **Judgment Criteria** — Decision rules with concrete thresholds
-4. **Escalation Conditions** — When to stop and ask humans (see Step 4)
-5. **Output Format** — How to present results (PR format, notifications, reports)
-6. **External Integrations** — APIs, webhooks, auth (environment variables, never hardcode)
-7. **Guardrails** — Hard limits (max files, timeout, rollback procedures)
+1. **Role** — Who the agent is and what it does (one sentence). Why: Without a clear role, the agent's tone and decision-making are inconsistent across runs.
+2. **Scope** — Allowed and forbidden actions (explicit lists). Why: Autonomous agents have no human watching each action. Explicit boundaries prevent scope creep.
+3. **Judgment Criteria** — Decision rules with concrete thresholds. Why: Vague criteria ("if it seems important") produce inconsistent behavior. Concrete thresholds ("error rate > 5%") make the agent predictable.
+4. **Escalation Conditions** — When to stop and ask humans (see Step 4). Why: The costliest failure mode is an agent that confidently does the wrong thing. Escalation is cheaper than cleanup.
+5. **Output Format** — How to present results (PR format, notifications, reports). Why: Scheduled tasks run unattended. Consistent output makes results scannable at a glance.
+6. **External Integrations** — APIs, webhooks, auth (environment variables, never hardcode). Why: Hardcoded secrets in CLAUDE.md will be committed to version control. Environment variables keep secrets separate.
+7. **Guardrails** — Hard limits (max files, timeout, rollback procedures). Why: Without hard limits, a single bad run can modify hundreds of files or run indefinitely.
 
 Select and customize a template based on the use case:
 
@@ -65,7 +65,9 @@ Select and customize a template based on the use case:
 | Daily/weekly reports | `templates/claude-md/reporting.md` |
 | Other / custom | `templates/claude-md/custom.md` |
 
-Read the selected template file and adapt it to the user's specific requirements.
+For CLI/Desktop installations, read the selected template file and adapt it to the user's specific requirements.
+
+For browser-only installations (Claude.ai Skills UI), templates are not available as separate files. In that case, use the 7-section structure above as a framework and build the CLAUDE.md from scratch, following the WHY guidance for each section.
 
 ### Step 4: Design Escalation
 

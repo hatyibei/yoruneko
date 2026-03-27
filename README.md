@@ -86,6 +86,23 @@ yoruneko/
 | OS | All | macOS/Win | All |
 | Best For | Quick polls | Local tasks | 24/7 automation |
 
+## Quality Evaluation
+
+Evaluated against [Anthropic skill-creator](https://github.com/anthropics/skills) criteria (5 dimensions):
+
+| Dimension | Result | Details |
+|---|---|---|
+| Frontmatter Completeness | PASS | `name` (6 chars, kebab-case) + `description` (479 chars) both valid |
+| Description Quality | PASS | 3 methods explicitly named, 5 use cases listed, "pushy" trigger phrasing |
+| Line Count Compliance | PASS | SKILL.md: 121 lines (limit: 500) |
+| WHY Explanations | PASS | All 7 CLAUDE.md sections include rationale; method selection includes judgment basis |
+| Eval Pass Rate | NOT TESTED | Requires skill-creator eval mode with eval.json test cases |
+
+### Notes
+- Progressive disclosure: frontmatter ~40 tokens, full SKILL.md <5k tokens, templates loaded on demand
+- Browser-only graceful degradation: SKILL.md is self-sufficient without template files
+- Evaluated 2026-03-27 against skill-creator v2 standards
+
 ## License
 
 MIT
